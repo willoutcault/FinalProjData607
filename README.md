@@ -1,5 +1,7 @@
 Final Project Proposal - Mean Squares
 
+http://rpubs.com/woutcault/final_607_project
+
 Team Members: Paul Perez, William Outcault, Aaron Zalki, John Suh
 
 Proposal:  As a team, we’re interested in seeing if the weather determines a rider’s preference in taking a street taxi, or a ride-sharing self-employed limousine service. As we've all experienced taking street taxi’s and for-hire vehicles, we understand they are different experiences and each may serve as better options in different scenarios. New York City has public records taxi rides for yellow taxis, green taxis, and for-hire vehicles. These records are available here in .csv format from starting in the year 2009. We’re looking to pair this data along with historical weather data, obtaining via API. We’ll load all our data into a database allowing the team to query subsets and samples of the data to analyze.
