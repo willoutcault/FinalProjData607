@@ -1,0 +1,22 @@
+---
+title: "weather"
+author: "Aaron Zalki"
+date: "12/11/2019"
+output: html_document
+---
+
+## Weather Data via API
+
+### Daily Weather 2009-2018
+
+After signing up for a free trial with [Visual Crossing Weather Rest API](https://www.visualcrossing.com/weather/weather-data-services?r_vi1) , we are able to generate weather csv files with up to 10000 rows after selecting a specific location and time period. Because the free trial has a 10000 row limit, the daily data was split up into three separate data frames (Bronx/Brooklyn , Manhattan/Queens and Staten Island).
+
+```{r daily weather, include=TRUE}
+daily1 <- read.csv("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/weatherdata/history?&dateTimeFormat=yyyy-MM-dd'T'HH%3Amm%3Ass&startDateTime=2009-01-01T00%3A00%3A00&endDateTime=2018-12-31T00%3A00%3A00&dayStartTime=0%3A0%3A00&dayEndTime=0%3A0%3A00&aggregateHours=24&collectStationContribution=false&maxDistance=80467&maxStations=3&unitGroup=us&locations=bronx%2Cny%7Cbrooklyn%2Cny&key=REPQ50A5DINKWTF73I9972ZMB")
+daily2 <- read.csv ("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/weatherdata/history?&dateTimeFormat=yyyy-MM-dd'T'HH%3Amm%3Ass&startDateTime=2009-01-01T00%3A00%3A00&endDateTime=2018-12-31T00%3A00%3A00&dayStartTime=0%3A0%3A00&dayEndTime=0%3A0%3A00&aggregateHours=24&collectStationContribution=false&maxDistance=80467&maxStations=3&unitGroup=us&locations=queens%2C%20new%20york%7Cmanhattan%2C%20new%20york&key=REPQ50A5DINKWTF73I9972ZMB")
+daily3 <- read.csv ("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/weatherdata/history?&dateTimeFormat=yyyy-MM-dd'T'HH%3Amm%3Ass&startDateTime=2009-01-01T00%3A00%3A00&endDateTime=2018-12-31T00%3A00%3A00&dayStartTime=0%3A0%3A00&dayEndTime=0%3A0%3A00&aggregateHours=24&collectStationContribution=false&maxDistance=80467&maxStations=3&unitGroup=us&locations=staten%20island%2C%20new%20york&key=REPQ50A5DINKWTF73I9972ZMB")
+#combine all five borough data
+nyc_daily_weather <- rbind (daily1,daily2,daily3)
+head (nyc_daily_weather)
+```
+
