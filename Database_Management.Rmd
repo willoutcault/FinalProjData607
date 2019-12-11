@@ -1,0 +1,186 @@
+---
+title: "Database Management - Final Project"
+author: "Paul Perez, William Outcault, Aaron Zalki, John Suh"
+date: "12/7/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Database Package
+```{r Database Package}
+#install.packages("sqldf")
+library(sqldf)
+```
+### Connect to Database
+If a database has not been created, the below code will create it, otherwise a connection to the database is made.
+
+```{r Connect to Database}
+db <- dbConnect(SQLite(), dbname = "nyc_taxi_db.sqlite")
+```
+
+### Create Tables
+Create a table for the yellow taxi data at a daily level.
+
+```{r Yellow_daily, eval=FALSE}
+dbSendQuery(conn = db,
+            "CREATE TABLE IF NOT EXISTS yellow_daily
+            (date	TEXT,
+            passenger_count	NUMERIC,
+            trip_distance	NUMERIC,
+            fare_amount	NUMERIC,
+            surcharge	NUMERIC,
+            mta_tax	NUMERIC,
+            tip_amount	NUMERIC,
+            tolls_amount	NUMERIC,
+            total_amount	NUMERIC,
+            rides	NUMERIC,
+            file_name	TEXT)")
+```
+
+
+Create a table for the green taxi data at a daily level.
+```{r green_daily, eval=FALSE}
+dbSendQuery(conn = db,
+            "CREATE TABLE IF NOT EXISTS green_daily
+            (date	TEXT,
+            passenger_count	NUMERIC,
+            trip_distance	NUMERIC,
+            fare_amount	NUMERIC,
+            surcharge	NUMERIC,
+            mta_tax	NUMERIC,
+            tip_amount	NUMERIC,
+            tolls_amount	NUMERIC,
+            total_amount	NUMERIC,
+            rides	NUMERIC,
+            file_name	TEXT)")
+```
+
+
+Create a table for the fhv taxi data at a daily level.
+```{r fhv_daily, eval=FALSE}
+dbSendQuery(conn = db,
+            "CREATE TABLE IF NOT EXISTS fhv_daily
+            (date	TEXT,
+            rides	NUMERIC,
+            file_name	TEXT)")
+```
+
+
+Create a table for the weather data at a daily level.
+```{r weather_daily, eval=FALSE}
+dbSendQuery(conn = db,
+            "CREATE TABLE IF NOT EXISTS weather_daily
+            (address	TEXT,
+            date	TEXT,
+            min_temp	NUMERIC,
+            max_temp	NUMERIC,
+            temp	NUMERIC,
+            dew_point	NUMERIC,
+            rel_humidity	NUMERIC,
+            heat_index	NUMERIC,
+            wind_speed	NUMERIC,
+            wind_gust	NUMERIC,
+            wind_direction	NUMERIC,
+            precipitation	NUMERIC,
+            precipitation_cover	NUMERIC,
+            snow_depth	NUMERIC,
+            visibility	NUMERIC,
+            cloud_cover	NUMERIC,
+            sea_level_pressure	NUMERIC,
+            weather_type	TEXT,
+            latitude	TEXT,
+            longitude	TEXT,
+            resolved_address	TEXT,
+            info	TEXT,
+            file_name	TEXT)")
+```
+
+
+Create a view for the taxi data that aggregates the `yellow_daily`, `green_daily`, and `fhv_daily` tables.
+```{r Taxi View, eval=FALSE}
+dbSendQuery(conn = db,
+            "CREATE VIEW IF NOT EXISTS v_taxi_daily AS
+            SELECT 'Yellow' AS taxi, date(date) AS date, passenger_count, trip_distance,
+            fare_amount, surcharge, mta_tax, tip_amount, tolls_amount, total_amount, 
+            rides, file_name FROM yellow_daily
+            UNION
+            SELECT 'Green' AS taxi, date(date) as date, passenger_count, trip_distance,
+            fare_amount, surcharge, mta_tax, tip_amount, tolls_amount, total_amount, 
+            rides, file_name FROM green_daily
+            UNION
+            SELECT 'FHV' AS taxi, date(date) as date, 0 AS passenger_count, 0 AS trip_distance,
+            0 AS fare_amount, 0 AS surcharge, 0 AS mta_tax, 0 AS tip_amount, 0 AS tolls_amount, 0 AS total_amount, 
+            rides, file_name FROM fhv_daily
+            ")
+```
+
+
+### Load Functions
+We'll create two functions to load data into the database. `load_taxi_data` loads the yellow, green, and fhv taxi files into their respective tables without renaming the columns since the file's column names already the same as the table column names. This function takes two arguments, teh file directory and the destination table.
+
+```{r Load Taxi Function, eval=FALSE}
+load_taxi_data <- function(directory, table) {
+  for (file in directory) {
+    df <- read.csv(file)
+    file_name <- strsplit(file, split = '/')[[1]][8]
+    df$file_name <- rep(file_name, nrow(df))
+    print(paste('Writing to table', table, sep = " "))
+    dbWriteTable(conn = db, name = table, value = df, row.names = FALSE, header = TRUE, append = TRUE)
+    print(paste(file_name, 'inserted into', table, sep = " "))
+  }
+}
+```
+
+
+For the `load_weather_data` function, it is the same as the `load_taxi_data` function, but has a third argument. This argument rename's column's for to load into the database.
+```{r Load Weather Function, eval=FALSE}
+load_weather_data <- function(directory, table, columns) {
+  for (file in directory) {
+    df <- read.csv(file)
+    file_name <- strsplit(file, split = '/')[[1]][8]
+    df$file_name <- rep(file_name, nrow(df))
+    names(df) <- columns
+    print(paste('Writing to table', table, sep = " "))
+    dbWriteTable(conn = db, name = table, value = df, row.names = FALSE, header = TRUE, append = TRUE)
+    print(paste(file_name, 'inserted into', table, sep = " "))
+  }
+}
+```
+
+### Create Variables for Load
+Variables are created using a internal R functions to create a list of files from a given directory. In the case below, the were pasting the working directory with the subdirectory for each of the files we'll need to load.
+```{r File Directories, eval=FALSE}
+yellow_taxi_dir <- list.files(path=paste0(getwd(), "/Yellow_Taxi_Data"), pattern="*.csv", full.names=TRUE, recursive=FALSE)
+green_taxi_dir <- list.files(path=paste0(getwd(), "/Green_Taxi_Data"), pattern="*.csv", full.names=TRUE, recursive=FALSE)
+fhv_taxi_dir <- list.files(path=paste0(getwd(), "/FHV_Taxi_Data"), pattern="*.csv", full.names=TRUE, recursive=FALSE)
+weather_daily_dir <- list.files(path=paste0(getwd(), "/weather_daily"), pattern="*.csv", full.names=TRUE, recursive=FALSE)
+```
+
+Assigning the column names for the weather dataset.
+```{r Weather Columns, eval=FALSE}
+weather_daily_col <- c("address", "date", "min_temp", "max_temp", "temp", "dew_point", "rel_humidity", "heat_index", "wind_speed", "wind_gust", "wind_direction", "precipitation", "precipitation_cover", "snow_depth", "visibility", "cloud_cover", "sea_level_pressure", "weather_type", "latitude", "longitude", "resolved_address", "info", "file_name")
+```
+
+
+### Load to Database
+Taxi data will only take the file directory variables and destination table as the two arguments
+
+```{r Load Taxi Data, eval=FALSE}
+load_taxi_data(yellow_taxi_dir, "yellow_daily")
+load_taxi_data(green_taxi_dir, "green_daily")
+load_taxi_data(fhv_taxi_dir, "fhv_daily")
+```
+
+
+Weather data will take the addtional column variable.
+```{r Load Weather Data, eval=FALSE}
+load_weather_data(weather_daily_dir, "weather_daily", weather_daily_col)
+```
+
+### Disconnect from Database
+```{r Disconnect}
+dbDisconnect(db)
+```

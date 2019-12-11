@@ -1,0 +1,48 @@
+---
+title: "Database Access - Final Project"
+author: "Paul Perez, William Outcault, Aaron Zalki, John Suh"
+date: "12/7/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Database Package
+```{r Database Package}
+#install.packages("sqldf")
+library(sqldf)
+```
+
+### Connect to Database
+```{r Connect to Database}
+db <- dbConnect(SQLite(), dbname = "nyc_taxi_db.sqlite")
+```
+
+### List Table's in Database
+```{r List Tables}
+dbListTables(conn = db)
+```
+
+### Read Database Table to Dataframe
+```{r Read Table, eval=FALSE}
+read_table <- data.frame(dbReadTable(db, "table_name"))
+```
+
+### Query Database
+```{r Query, eval=FALSE}
+query <- dbSendQuery(conn = db, "SELECT * FROM table_name")
+```
+
+
+### Write file from Query
+```{r Write File, eval=FALSE}
+write.csv(read_table, "file_name.csv", row.names=FALSE)
+```
+
+```{r Disconnect}
+dbDisconnect(conn = db)
+```
